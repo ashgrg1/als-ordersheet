@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Foodservice Order Sheet</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Segoe UI', sans-serif;
+    background: #0f172a;
+    color: #e2e8f0;
+    min-height: 100vh;
+    padding: 20px;
+  }
+
+  .header {
+    text-align: center;
+    padding: 20px 0 12px;
+  }
+
+  .header h1 { font-size: 1.9rem; color: #38bdf8; letter-spacing: 1px; }
+  .header p  { color: #94a3b8; margin-top: 4px; font-size: 0.88rem; }
+
+  .store-info {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin: 14px 0 20px;
+    flex-wrap: wrap;
+  }
+
+  .store-info input {
+    background: #1e293b;
+    border: 1px solid #334155;
+    color: #e2e8f0;
+    padding: 7px 12px;
+    border-radius: 8px;
+    font-size: 0.88rem;
+    width: 180px;
+  }
+
+  .store-info input:focus { outline: none; border-color: #38bdf8; }
+
+  /* KPI Cards */
+  .kpi-row {
+    display: flex;
+    gap: 14px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+  }
+
+  .kpi-card {
+    background: #1e293b;
+    border-radius: 12px;
+    padding: 16px 22px;
+    flex: 1;
+    min-width: 130px;
+    text-align: center;
+    border: 1px solid #334155;
+  }
+
+  .kpi-card .val { font-size: 2rem; font-weight: 700; color: #38bdf8; }
+  .kpi-card .lbl { font-size: 0.72rem; color: #94a3b8; margin-top: 3px; text-transform: uppercase; letter-spacing: 0.05em; }
+  .kpi-card.orange .val { color: #f97316; }
+  .kpi-card.green  .val { color: #22c55e; }
+  .kpi-card.violet .val { color: #a78bfa; }
+
+  /* Toolbar */
+  .toolbar {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .toolbar-left, .toolbar-right { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+
+  .search-box {
+    background: #1e293b;
+    border: 1px solid #334155;
+    color: #e2e8f0;
+    padding: 7px 12px;
+    border-radius: 8px;
+    font-size: 0.88rem;
+    width: 200px;
+  }
+
+  .search-box:focus { outline: none; border-color: #38bdf8; }
+
+  select.cat-filter {
+    background: #1e293b;
+    border: 1px solid #334155;
+    color: #e2e8f0;
+    padding: 7px 12px;
+    border-radius: 8px;
+    font-size: 0.88rem;
+  }
+
+  button {
+    padding: 7px 14px;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.2s;
+    white-space: nowrap;
+  }
+
+  button:hover { opacity: 0.82; }
+
+  .btn-add    { background: #059669; color: #fff; }
+  .btn-copy   { background: #0284c7; color: #fff; }
+  .btn-csv    { background: #d97706; color: #fff; }
+  .btn-save   { background: #7c3aed; color: #fff; }
+  .btn-print  { background: #0f766e; color: #fff; }
+  .btn-clear  { background: #475569; color: #fff; }
+  .btn-export { background: #334155; color: #e2e8f0; }
+  .btn-import { background: #1e293b; color: #e2e8f0; border: 1px solid #475569; }
+  .btn-del    { background: #dc2626; color: #fff; padding: 3px 9px; font-size: 0.78rem; }
+  .btn-dup    { background: #0284c7; color: #fff; padding: 3px 9px; font-size: 0.78rem; }
+
+  /* Add item form */
+  .add-form {
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 16px;
+    display: none;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: flex-end;
+  }
+
+  .add-form.open { display: flex; }
+
+  .add-form label { font-size: 0.78rem; color: #94a3b8; display: block; margin-bottom: 4px; }
+
+  .add-form input, .add-form select {
+    background: #0f172a;
+    border: 1px solid #334155;
+    color: #e2e8f0;
+    padding: 7px 10px;
+    border-radius: 7px;
+    font-size: 0.88rem;
+    width: 140px;
+  }
+
+  .add-form input:focus, .add-form select:focus { outline: none; border-color: #38bdf8; }
+
+  /* Table */
+  .table-wrap { overflow-x: auto; border-radius: 12px; border: 1px solid #1e293b; }
+
+  table { width: 100%; border-collapse: collapse; min-width: 900px; }
+
+  thead { background: #1e293b; }
+
+  thead th {
+    padding: 11px 10px;
+    text-align: left;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #94a3b8;
+    white-space: nowrap;
+  }
+
+  tbody tr { border-bottom: 1px solid #1e293b; transition: background 0.15s; }
+  tbody tr:hover { background: #1e293b55; }
+  tbody tr.low-stock { border-left: 3px solid #f97316; }
+
+  tbody td {
+    padding: 7px 8px;
+    font-size: 0.88rem;
+    vertical-align: middle;
+  }
+
+  tbody td input, tbody td select {
+    background: transparent;
+    border: 1px solid transparent;
+    color: #e2e8f0;
+    padding: 4px 7px;
+    border-radius: 6px;
+    width: 100%;
+    font-size: 0.88rem;
+  }
+
+  tbody td input:focus, tbody td select:focus {
+    outline: none;
+    border-color: #38bdf8;
+    background: #1e293b;
+  }
+
+  tbody td select { background: #0f172a; }
+
+  .badge-order {
+    font-weight: 700;
+    font-size: 1rem;
+    display: inline-block;
+    min-width: 36px;
+    text-align: center;
+  }
+
+  .badge-order.need  { color: #f97316; }
+  .badge-order.ok    { color: #22c55e; }
+
+  .badge-avg {
+    font-size: 0.82rem;
+    color: #a78bfa;
+    font-weight: 600;
+    text-align: center;
+    display: inline-block;
+    min-width: 36px;
+  }
+
+  .actions-cell { display: flex; gap: 5px; }
+
+  /* Footer */
+  .footer-btns {
+    margin-top: 22px;
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .footer-btns button { padding: 11px 26px; font-size: 0.92rem; }
+
+  .toast {
+    position: fixed;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #059669;
+    color: #fff;
+    padding: 10px 24px;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    display: none;
+    z-index: 999;
+  }
+
+  @media print {
+    body { background: #fff; color: #000; padding: 8px; }
+    .no-print { display: none !important; }
+    .header h1, .kpi-card .val { color: #000; }
+    table { border: 1px solid #ccc; }
+    thead { background: #f1f5f9; }
+    thead th { color: #333; }
+    tbody tr { border-bottom: 1px solid #e2e8f0; }
+    tbody td input, tbody td select { color: #000; background: transparent; border: none; }
+    .badge-order.need { color: #c00; }
+    .badge-order.ok   { color: #060; }
+    .badge-avg { color: #5b21b6; }
+    .kpi-card { border: 1px solid #ccc; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>Foodservice Order Sheet</h1>
+  <p>Track par levels, on-hand stock, and generate orders</p>
+</div>
+
+<div class="store-info no-print">
+  <input type="text" id="storeName" placeholder="Store Name" value="Alsup">
+  <input type="date" id="orderDate">
+  <input type="text" id="orderedBy" placeholder="Ordered By">
+  <input type="text" id="vendor" placeholder="Vendor / Supplier">
+</div>
+
+<!-- KPI Cards -->
+<div class="kpi-row">
+  <div class="kpi-card">
+    <div class="val" id="kpiTracked">0</div>
+    <div class="lbl">Items Tracked</div>
+  </div>
+  <div class="kpi-card orange">
+    <div class="val" id="kpiLines">0</div>
+    <div class="lbl">Lines to Order</div>
+  </div>
+  <div class="kpi-card green">
+    <div class="val" id="kpiUnits">0</div>
+    <div class="lbl">Total Units</div>
+  </div>
+</div>
+
+<!-- Toolbar -->
+<div class="toolbar no-print">
+  <div class="toolbar-left">
+    <input type="text" class="search-box" id="searchBox" placeholder="Search items..." oninput="renderTable()">
+    <select class="cat-filter" id="filterCat" onchange="renderTable()">
+      <option value="">All Categories</option>
+    </select>
+    <button class="btn-add" onclick="toggleAddForm()">+ New Foodservice Item</button>
+  </div>
+  <div class="toolbar-right">
+    <button class="btn-copy"   onclick="copyOrder()">Copy Order</button>
+    <button class="btn-csv"    onclick="downloadCSV()">Download CSV</button>
+    <button class="btn-export" onclick="exportData()">Backup</button>
+    <button class="btn-import" onclick="document.getElementById('importFile').click()">Restore</button>
+    <input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(event)">
+  </div>
+</div>
+
+<!-- Add Item Form -->
+<div class="add-form no-print" id="addForm">
+  <div>
+    <label>Item Name *</label>
+    <input type="text" id="newName" placeholder="e.g. French Fries 5lb">
+  </div>
+  <div>
+    <label>Category</label>
+    <select id="newCat">
+      <option>Frozen</option><option>Beverages</option><option>Dairy</option>
+      <option>Snacks</option><option>Produce</option><option>Meat</option>
+      <option>Bakery</option><option>Condiments</option><option>Paper</option>
+      <option>Cleaning</option><option>Other</option>
+    </select>
+  </div>
+  <div>
+    <label>Par Level</label>
+    <input type="number" id="newPar" placeholder="0" min="0" value="0">
+  </div>
+  <div>
+    <label>On Hand</label>
+    <input type="number" id="newOnHand" placeholder="0" min="0" value="0">
+  </div>
+  <div>
+    <label>&nbsp;</label>
+    <button class="btn-add" onclick="addItem()">Add Item</button>
+  </div>
+</div>
+
+<!-- Table -->
+<div class="table-wrap">
+  <table id="orderTable">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Foodservice Item</th>
+        <th>Category</th>
+        <th>Par</th>
+        <th>On Hand</th>
+        <th>Order</th>
+
+        <th>Notes</th>
+        <th class="no-print">Actions</th>
+      </tr>
+    </thead>
+    <tbody id="tableBody"></tbody>
+  </table>
+</div>
+
+<div class="footer-btns no-print">
+  <button class="btn-save"  onclick="saveOrder()">Save Order</button>
+  <button class="btn-print" onclick="window.print()">Print / PDF</button>
+  <button class="btn-clear" onclick="clearAdj()">Clear Adj. Qty</button>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const KEY = 'foodservice-order-v1';
+const CATS = ['Frozen','Beverages','Dairy','Snacks','Produce','Meat','Bakery','Condiments','Paper','Cleaning','Other'];
+
+let rows = [];
+
+function init() {
+  document.getElementById('orderDate').value = new Date().toISOString().split('T')[0];
+  load();
+  if (!rows.length) loadDefaults();
+  renderAll();
+}
+
+function loadDefaults() {
+  rows = [
+    { name:'French Fries 5lb',      cat:'Frozen',     par:10, onHand:3,  adj:'', price:12.99, notes:'', history:[] },
+    { name:'Chicken Tenders 10lb',   cat:'Frozen',     par:8,  onHand:2,  adj:'', price:24.50, notes:'', history:[] },
+    { name:'Hot Dog Buns (12pk)',     cat:'Bakery',     par:15, onHand:6,  adj:'', price:3.29,  notes:'', history:[] },
+    { name:'Fountain Syrup Cola',    cat:'Beverages',  par:6,  onHand:2,  adj:'', price:45.00, notes:'', history:[] },
+    { name:'Coffee Cups 12oz (500)',  cat:'Paper',      par:5,  onHand:1,  adj:'', price:28.00, notes:'', history:[] },
+    { name:'Ketchup Packets (1000)', cat:'Condiments', par:4,  onHand:2,  adj:'', price:18.00, notes:'', history:[] },
+  ];
+}
+
+function renderAll() {
+  renderTable();
+  updateKPI();
+  updateCatFilter();
+}
+
+function renderTable() {
+  const search = document.getElementById('searchBox').value.toLowerCase();
+  const catF   = document.getElementById('filterCat').value;
+  const tbody  = document.getElementById('tableBody');
+  tbody.innerHTML = '';
+  let num = 0;
+
+  rows.forEach((r, i) => {
+    if (search && !r.name.toLowerCase().includes(search)) return;
+    if (catF && r.cat !== catF) return;
+    num++;
+
+    const order = Math.max(0, (r.par || 0) - (r.onHand || 0));
+    const avg   = calcAvg(r.history);
+    const isLow = order > 0;
+
+    const tr = document.createElement('tr');
+    if (isLow) tr.classList.add('low-stock');
+
+    tr.innerHTML = `
+      <td style="color:#64748b;font-size:0.78rem">${num}</td>
+      <td><input type="text" value="${esc(r.name)}" onchange="rows[${i}].name=this.value"></td>
+      <td>
+        <select onchange="rows[${i}].cat=this.value">
+          ${CATS.map(c=>`<option value="${c}"${r.cat===c?' selected':''}>${c}</option>`).join('')}
+        </select>
+      </td>
+      <td><input type="number" min="0" value="${r.par}" onchange="rows[${i}].par=+this.value;renderAll()" style="width:60px"></td>
+      <td><input type="number" min="0" value="${r.onHand}" onchange="rows[${i}].onHand=+this.value;renderAll()" style="width:60px"></td>
+      <td style="text-align:center"><span class="badge-order ${order>0?'need':'ok'}">${order}</span></td>
+
+      <td><input type="text" value="${esc(r.notes)}" onchange="rows[${i}].notes=this.value" placeholder="Notes..."></td>
+      <td class="no-print">
+        <div class="actions-cell">
+          <button class="btn-dup" onclick="dupRow(${i})">Copy</button>
+          <button class="btn-del" onclick="delRow(${i})">Del</button>
+        </div>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+function calcAvg(history) {
+  if (!history || !history.length) return 0;
+  const last5 = history.slice(-5);
+  const sum = last5.reduce((a, b) => a + b, 0);
+  return Math.round(sum / last5.length);
+}
+
+function updateKPI() {
+  let lines = 0, units = 0, cost = 0;
+  rows.forEach(r => {
+    const order = Math.max(0, (r.par || 0) - (r.onHand || 0));
+    const final = r.adj !== '' ? +r.adj : order;
+    if (final > 0) { lines++; units += final; cost += final * (r.price || 0); }
+  });
+  document.getElementById('kpiTracked').textContent = rows.length;
+  document.getElementById('kpiLines').textContent   = lines;
+  document.getElementById('kpiUnits').textContent   = units;
+  document.getElementById('kpiCost').textContent    = '$' + cost.toFixed(2);
+}
+
+function updateCatFilter() {
+  const sel = document.getElementById('filterCat');
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">All Categories</option>';
+  CATS.forEach(c => {
+    const o = document.createElement('option');
+    o.value = c; o.textContent = c;
+    if (c === cur) o.selected = true;
+    sel.appendChild(o);
+  });
+}
+
+function toggleAddForm() {
+  const f = document.getElementById('addForm');
+  f.classList.toggle('open');
+  if (f.classList.contains('open')) document.getElementById('newName').focus();
+}
+
+function addItem() {
+  const name = document.getElementById('newName').value.trim();
+  if (!name) { alert('Please enter an item name.'); return; }
+  rows.push({
+    name,
+    cat:     document.getElementById('newCat').value,
+    par:     +document.getElementById('newPar').value    || 0,
+    onHand:  +document.getElementById('newOnHand').value || 0,
+    adj:     '',
+    price:   +document.getElementById('newPrice').value  || 0,
+    notes:   '',
+    history: []
+  });
+  document.getElementById('newName').value    = '';
+  document.getElementById('newPar').value     = '0';
+  document.getElementById('newOnHand').value  = '0';
+  document.getElementById('newPrice').value   = '0';
+  renderAll();
+  toast('Item added!');
+}
+
+function dupRow(i) {
+  rows.splice(i + 1, 0, JSON.parse(JSON.stringify(rows[i])));
+  renderAll();
+}
+
+function delRow(i) {
+  if (rows.length <= 1) { alert('Need at least one item.'); return; }
+  if (confirm('Delete "' + rows[i].name + '"?')) { rows.splice(i, 1); renderAll(); }
+}
+
+function saveOrder() {
+  // Record ordered qty into history for avg tracking
+  rows.forEach(r => {
+    const order = Math.max(0, (r.par || 0) - (r.onHand || 0));
+    const final = r.adj !== '' ? +r.adj : order;
+    if (!r.history) r.history = [];
+    if (final > 0) r.history.push(final);
+    if (r.history.length > 10) r.history = r.history.slice(-10);
+  });
+  persist();
+  toast('Order saved! Avg history updated.');
+}
+
+function persist() {
+  localStorage.setItem(KEY, JSON.stringify({
+    storeName:  document.getElementById('storeName').value,
+    orderDate:  document.getElementById('orderDate').value,
+    orderedBy:  document.getElementById('orderedBy').value,
+    vendor:     document.getElementById('vendor').value,
+    rows
+  }));
+}
+
+function load() {
+  const raw = localStorage.getItem(KEY);
+  if (!raw) return;
+  try {
+    const d = JSON.parse(raw);
+    rows = (d.rows || []).map(r => ({ history: [], ...r }));
+    if (d.storeName) document.getElementById('storeName').value = d.storeName;
+    if (d.orderDate) document.getElementById('orderDate').value = d.orderDate;
+    if (d.orderedBy) document.getElementById('orderedBy').value = d.orderedBy;
+    if (d.vendor)    document.getElementById('vendor').value    = d.vendor;
+  } catch(e) {}
+}
+
+function clearAdj() {
+  if (confirm('Clear all adjusted quantities?')) {
+    rows.forEach(r => r.adj = '');
+    renderAll();
+  }
+}
+
+function copyOrder() {
+  let text = `Order Sheet — ${document.getElementById('storeName').value} — ${document.getElementById('orderDate').value}\n\n`;
+  text += 'Item\t\t\tPar\tOn Hand\tOrder\n';
+  text += '─'.repeat(60) + '\n';
+  rows.forEach(r => {
+    const order = r.adj !== '' ? +r.adj : Math.max(0, (r.par||0) - (r.onHand||0));
+    if (order > 0) text += `${r.name}\t\t${r.par}\t${r.onHand}\t${order}\n`;
+  });
+  navigator.clipboard.writeText(text).then(() => toast('Order copied to clipboard!')).catch(() => alert('Could not copy — try Download CSV instead.'));
+}
+
+function downloadCSV() {
+  const date = document.getElementById('orderDate').value;
+  const store = document.getElementById('storeName').value;
+  let csv = `Store,${store}\nDate,${date}\nOrdered By,${document.getElementById('orderedBy').value}\n\n`;
+  csv += 'Item,Category,Par,On Hand,Order,Adj Order,5-Order Avg,Unit Price,Est Cost,Notes\n';
+  rows.forEach(r => {
+    const order = Math.max(0, (r.par||0) - (r.onHand||0));
+    const final = r.adj !== '' ? +r.adj : order;
+    const avg   = calcAvg(r.history);
+    const cost  = (final * (r.price||0)).toFixed(2);
+    csv += `"${r.name}","${r.cat}",${r.par},${r.onHand},${order},${final},${avg||''},${r.price},${cost},"${r.notes}"\n`;
+  });
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `order-${store.replace(/\s+/g,'-')}-${date}.csv`;
+  a.click();
+  toast('CSV downloaded!');
+}
+
+function exportData() {
+  const data = {
+    storeName: document.getElementById('storeName').value,
+    orderDate: document.getElementById('orderDate').value,
+    orderedBy: document.getElementById('orderedBy').value,
+    vendor:    document.getElementById('vendor').value,
+    rows
+  };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `ordersheet-backup-${new Date().toISOString().split('T')[0]}.json`;
+  a.click();
+  toast('Backup exported!');
+}
+
+function importData(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      const d = JSON.parse(ev.target.result);
+      rows = (d.rows || []).map(r => ({ history: [], ...r }));
+      if (d.storeName) document.getElementById('storeName').value = d.storeName;
+      if (d.orderDate) document.getElementById('orderDate').value = d.orderDate;
+      if (d.orderedBy) document.getElementById('orderedBy').value = d.orderedBy;
+      if (d.vendor)    document.getElementById('vendor').value    = d.vendor;
+      renderAll();
+      toast('Backup restored!');
+    } catch(e) { alert('Invalid backup file.'); }
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+}
+
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.display = 'block';
+  setTimeout(() => t.style.display = 'none', 2500);
+}
+
+function esc(s) {
+  return String(s || '').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+}
+
+init();
+</script>
+</body>
+</html>
